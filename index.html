@@ -110,7 +110,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-seri
   <div class="topbar">
     <div class="topbar-left">
       <h1>방문객 예약</h1>
-      <div class="user-info">10:00 ~ 15:00 · 점심(12~13시) 제외 · 30분 단위 · 최대 2명</div>
+      <div class="user-info">10:00 ~ 15:00 · 점심(12~13시) 제외</div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
       <div class="user-badge" id="userBadge"></div>
@@ -335,7 +335,7 @@ function renderMyBookings() {
   list.innerHTML = myBookings.map(b =>
     '<div class="res-item">' +
       '<div>' +
-        '<div class="res-main">' + b.date + ' ' + b.time + '</div>' +
+        '<div class="res-main">' + formatDate(b.date) + ' ' + b.time.slice(0,5) + '</div>' +
         '<div class="res-sub">' + b.visitor_name + (b.visitor_phone ? ' · ' + b.visitor_phone : '') + (b.purpose ? ' · ' + b.purpose : '') + '</div>' +
       '</div>' +
       '<button class="btn-res-cancel" onclick="cancelBooking(\'' + b.id + '\')">취소</button>' +
@@ -364,6 +364,13 @@ async function apiFetch(method, params) {
   }
   const r = await fetch(url, opts);
   return r.json();
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  const WD = ['일','월','화','수','목','금','토'];
+  return (d.getMonth()+1) + '/' + d.getDate() + '(' + WD[d.getDay()] + ')';
 }
 
 function showToast(msg, isErr) {

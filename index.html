@@ -257,7 +257,7 @@ body {
 <script>
 // ══ 설정 ════════════════════════════════════════════
 // Apps Script 배포 후 받은 웹 앱 URL로 교체하세요
-const API_URL = 'https://script.google.com/macros/s/AKfycbxPkb2wDu1KheHa91kkRp-7aZzMZFgJ3E3WtR-st0bcB3ak5QTtGljNMFEjlnkP5CRU/exec';
+const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
 
 const SLOTS = ['10:00','10:30','11:00','11:30','13:00','13:30','14:00','14:30'];
 const MAX   = 2;
@@ -304,7 +304,7 @@ async function doLogin() {
     const res = await apiFetch('GET', { action: 'verify', name, dong, ho });
     if (!res.ok) { errEl.textContent = res.error; return; }
     if (!res.verified) { errEl.textContent = '일치하는 계약자 정보가 없습니다. 이름, 동, 호를 다시 확인해주세요.'; return; }
-    user = { name, dong, ho };
+    user = { name, dong, ho, phone: res.phone || '' };
     sessionStorage.setItem('user', JSON.stringify(user));
     showApp();
   } catch {
@@ -379,11 +379,14 @@ function renderSlots(slots) {
     const card = document.createElement('div');
     card.className = 'slot-card' + (slot.is_mine ? ' mine' : '');
 
-    const dots = Array.from({length: MAX}, (_, i) => {
-      let cls = 'dot';
-      if (i < slot.booked) cls += slot.is_mine && i === slot.booked - 1 ? ' mine-dot' : ' filled';
-      return `<div class="${cls}"></div>`;
-    }).join('');
+    let statusText, statusColor;
+    if (slot.is_mine) {
+      statusText = '예약완료 (내 예약)'; statusColor = '#0F6E56';
+    } else if (!slot.available) {
+      statusText = '마감'; statusColor = '#A32D2D';
+    } else {
+      statusText = '예약 가능'; statusColor = '#534AB7';
+    }
 
     let btnHtml;
     if (slot.is_mine) {
@@ -395,8 +398,8 @@ function renderSlots(slots) {
     }
 
     card.innerHTML = `<div class="slot-time">${slot.time}</div>
-      <div class="slot-meta">${slot.booked}/${MAX}명 예약됨</div>
-      <div class="dots">${dots}</div>${btnHtml}`;
+      <div class="slot-meta" style="color:${statusColor};font-weight:500;">${statusText}</div>
+      ${btnHtml}`;
     grid.appendChild(card);
   });
 }
@@ -405,9 +408,11 @@ function renderSlots(slots) {
 function openForm(time) {
   pendingSlot = time;
   document.getElementById('bformTitle').textContent = `${selDate} ${time} 예약 정보 입력`;
-  ['fVName','fVPhone','fVPurpose'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('fVName').value    = user.name || '';
+  document.getElementById('fVPhone').value   = user.phone || '';
+  document.getElementById('fVPurpose').value = '';
   document.getElementById('bform').classList.add('open');
-  document.getElementById('fVName').focus();
+  document.getElementById('fVPurpose').focus();
 }
 
 function closeForm() {

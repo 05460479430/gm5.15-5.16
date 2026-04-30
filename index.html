@@ -257,7 +257,7 @@ body {
 <script>
 // ══ 설정 ════════════════════════════════════════════
 // Apps Script 배포 후 받은 웹 앱 URL로 교체하세요
-const API_URL = 'https://script.google.com/macros/s/AKfycbw_YzTK3vHv0aPd29eJ9dKiPbWjN5W0ZT6znmy5QZ9zRDV3Han54BZFkjVMdB4cmmkb/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwSkKMCIBzO1B-w7-0eo3swRcVPBCX9ZR4X_r7R7ho-xo1l5HevX8gGqCyqVt9flrIf/exec';
 
 const SLOTS = ['10:00','10:30','11:00','11:30','13:00','13:30','14:00','14:30'];
 const MAX   = 2;
@@ -324,23 +324,19 @@ function doLogout() {
 function buildDateTabs() {
   const wrap = document.getElementById('dateTabs');
   wrap.innerHTML = '';
-  const today = new Date();
   const WD = ['일','월','화','수','목','금','토'];
+  const fixedDates = ['2026-05-15', '2026-05-16'];
 
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
-    const key = d.toISOString().slice(0,10);
-    const lbl = i === 0 ? '오늘'
-              : i === 1 ? '내일'
-              : `${d.getMonth()+1}/${d.getDate()}(${WD[d.getDay()]})`;
+  fixedDates.forEach((key, i) => {
+    const d = new Date(key + 'T00:00:00');
+    const lbl = `5/${d.getDate()}(${WD[d.getDay()]})`;
     const btn = document.createElement('button');
     btn.className = 'dtab' + (i === 0 ? ' active' : '');
     btn.textContent = lbl;
     btn.onclick = () => selectDate(key, btn);
     wrap.appendChild(btn);
     if (i === 0) { selDate = key; loadSlots(key); }
-  }
+  });
 }
 
 function selectDate(date, btn) {
@@ -354,17 +350,38 @@ function selectDate(date, btn) {
 // ══ 슬롯 ════════════════════════════════════════════
 async function loadSlots(date) {
   const grid = document.getElementById('slotsGrid');
+
+  // 4월 30일 오후 10시 이전 예약 불가
+  const openTime = new Date('2026-04-30T22:00:00');
+  if (new Date() < openTime) {
+    const diff = openTime - new Date();
+    const h = Math.floor(diff/3600000);
+    const m = Math.floor((diff%3600000)/60000);
+    grid.innerHTML = `<p class="empty" style="color:#534AB7;padding:1.5rem 0;text-align:center;">
+      예약 오픈 대기 중<br>
+      <span style="font-size:13px;color:#aaa;margin-top:6px;display:block;">4/30(목) 오후 10시부터 예약 가능 · ${h}시간 ${m}분 남음</span>
+    </p>`;
+    return;
+  }
+
   grid.innerHTML = '<p class="loading">불러오는 중...</p>';
   try {
     const res = await apiFetch('GET', { action: 'slots', date, name: user.name, dong: user.dong, ho: user.ho });
     if (!res.ok) { grid.innerHTML = `<p class="empty">${res.error}</p>`; return; }
-    renderSlots(res.slots);
+    renderSlots(res.slots, date);
   } catch {
     grid.innerHTML = '<p class="empty">슬롯을 불러오지 못했습니다.</p>';
   }
 }
 
-function renderSlots(slots) {
+function isPastSlot(date, time) {
+  const now = new Date();
+  const [h, m] = time.split(':').map(Number);
+  const slotTime = new Date(date + 'T' + time + ':00');
+  return now >= slotTime;
+}
+
+function renderSlots(slots, date) {
   const grid = document.getElementById('slotsGrid');
   grid.innerHTML = '';
 
@@ -379,9 +396,13 @@ function renderSlots(slots) {
     const card = document.createElement('div');
     card.className = 'slot-card' + (slot.is_mine ? ' mine' : '');
 
+    const past = isPastSlot(date, slot.time);
+
     let statusText, statusColor;
     if (slot.is_mine) {
       statusText = '예약완료 (내 예약)'; statusColor = '#0F6E56';
+    } else if (past) {
+      statusText = '시간 종료'; statusColor = '#aaa';
     } else if (!slot.available) {
       statusText = '마감'; statusColor = '#A32D2D';
     } else {
@@ -391,6 +412,8 @@ function renderSlots(slots) {
     let btnHtml;
     if (slot.is_mine) {
       btnHtml = `<button class="slot-btn cancel" onclick="cancelBooking('${slot.booking_id}')">예약 취소</button>`;
+    } else if (past) {
+      btnHtml = `<button class="slot-btn" disabled>시간 종료</button>`;
     } else if (!slot.available) {
       btnHtml = `<button class="slot-btn" disabled>마감</button>`;
     } else {

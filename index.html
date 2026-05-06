@@ -147,7 +147,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-seri
   <div class="topbar">
     <div class="topbar-left">
       <h1>방문객 예약</h1>
-      <div class="user-info">10:00 ~ 15:20 · 점심(12~13시) 제외</div>
+      <div class="user-info">10:00 ~ 15:00 · 점심(12~13시) 제외</div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
       <div class="user-badge" id="userBadge"></div>
@@ -325,6 +325,11 @@ function renderSlots(slots, date) {
 }
 
 function openForm(time) {
+  // 이미 예약이 있으면 차단
+  if (myBookings.length > 0) {
+    showToast('이미 예약 내역이 있습니다. 취소 후 예약하여 주시기 바랍니다.', true);
+    return;
+  }
   pendingSlot = time;
   document.getElementById('bformTitle').textContent = selDate + ' ' + time + ' 예약 정보 입력';
   document.getElementById('fVName').value    = user.name || '';

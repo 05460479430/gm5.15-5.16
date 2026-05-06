@@ -147,7 +147,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-seri
   <div class="topbar">
     <div class="topbar-left">
       <h1>방문객 예약</h1>
-      <div class="user-info">10:00 ~ 15:00 · 점심(12~13시) 제외</div>
+      <div class="user-info">09:30 ~ 15:00 · 점심(12~13시) 제외 · 30분 단위 · 타임당 최대 3명</div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
       <div class="user-badge" id="userBadge"></div>
@@ -191,8 +191,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-seri
 
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbwSkKMCIBzO1B-w7-0eo3swRcVPBCX9ZR4X_r7R7ho-xo1l5HevX8gGqCyqVt9flrIf/exec';
-const SLOTS = ['10:00','10:20','10:40','11:00','11:20','11:40','13:00','13:20','13:40','14:00','14:20','14:40','15:00','15:20'];
-const MAX = 2;
+const SLOTS = ['09:30','10:00','10:30','11:00','11:30','13:00','13:30','14:00','14:30','15:00'];
+const MAX = 3;
 const OPEN_TIME = new Date('2026-04-30T22:00:00');
 
 let user = JSON.parse(sessionStorage.getItem('user') || 'null');
@@ -294,7 +294,7 @@ function renderSlots(slots, date) {
   const grid = document.getElementById('slotsGrid');
   grid.innerHTML = '';
   slots.forEach((slot, idx) => {
-    if (idx === 6) {
+    if (idx === 5) {
       const bar = document.createElement('div');
       bar.className = 'lunch-bar';
       bar.textContent = '점심시간 12:00 ~ 13:00 · 예약 불가';
